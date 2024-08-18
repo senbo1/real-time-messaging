@@ -3,9 +3,10 @@ import { pgTable, text, uuid, timestamp, unique } from 'drizzle-orm/pg-core';
 
 export const usersTable = pgTable('user', {
   id: uuid('id').primaryKey().defaultRandom(),
+  googleId: text('google_id').notNull().unique(),
   name: text('name').notNull(),
   email: text('email').notNull().unique(),
-  password: text('password').notNull(),
+  profilePicture: text('profile_picture'),
   createdAt: timestamp('created_at').defaultNow(),
 });
 
