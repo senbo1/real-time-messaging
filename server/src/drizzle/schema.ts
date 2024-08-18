@@ -10,23 +10,10 @@ export const usersTable = pgTable('user', {
   createdAt: timestamp('created_at').defaultNow(),
 });
 
-export const userRelations = relations(usersTable, ({ many }) => ({
-  messages: many(messagesTable),
-  userConversations: many(userConversationsTable),
-}));
-
 export const conversationsTable = pgTable('conversation', {
   id: uuid('id').primaryKey().defaultRandom(),
   createdAt: timestamp('created_at').defaultNow(),
 });
-
-export const conversationRelations = relations(
-  conversationsTable,
-  ({ many }) => ({
-    messages: many(messagesTable),
-    userConversations: many(userConversationsTable),
-  })
-);
 
 export const messagesTable = pgTable('message', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -39,17 +26,6 @@ export const messagesTable = pgTable('message', {
   content: text('content').notNull(),
   createdAt: timestamp('created_at').defaultNow(),
 });
-
-export const messagesRelations = relations(messagesTable, ({ one }) => ({
-  conversation: one(conversationsTable, {
-    fields: [messagesTable.conversationId],
-    references: [conversationsTable.id],
-  }),
-  sender: one(usersTable, {
-    fields: [messagesTable.senderId],
-    references: [usersTable.id],
-  }),
-}));
 
 export const userConversationsTable = pgTable(
   'user_conversation',
@@ -71,6 +47,30 @@ export const userConversationsTable = pgTable(
     };
   }
 );
+
+export const userRelations = relations(usersTable, ({ many }) => ({
+  messages: many(messagesTable),
+  userConversations: many(userConversationsTable),
+}));
+
+export const conversationRelations = relations(
+  conversationsTable,
+  ({ many }) => ({
+    messages: many(messagesTable),
+    userConversations: many(userConversationsTable),
+  })
+);
+
+export const messagesRelations = relations(messagesTable, ({ one }) => ({
+  conversation: one(conversationsTable, {
+    fields: [messagesTable.conversationId],
+    references: [conversationsTable.id],
+  }),
+  sender: one(usersTable, {
+    fields: [messagesTable.senderId],
+    references: [usersTable.id],
+  }),
+}));
 
 export const userConversationsRelations = relations(
   userConversationsTable,
