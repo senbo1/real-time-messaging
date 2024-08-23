@@ -1,4 +1,13 @@
+import { Request, Response, NextFunction } from 'express';
 import session from 'express-session';
+
+export const isAuth = (req: Request, res: Response, next: NextFunction) => {
+  if (req.isAuthenticated()) {
+    next();
+  } else {
+    res.status(401).json({ message: 'Unauthorized' });
+  }
+};
 
 export const sessionMiddleware = session({
   name: 'session_id',

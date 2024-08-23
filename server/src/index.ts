@@ -6,11 +6,9 @@ import { Server } from 'socket.io';
 import cors from 'cors';
 import passport from 'passport';
 import authRoutes from './routes/authRoutes';
-import conversationsRoute from './routes/conversationsRoutes';
-import { sessionMiddleware } from './middleware/session';
+import { sessionMiddleware } from './middleware/authmiddleware';
 import { Middleware, onlyForHandshake } from './middleware/onlyForHandshake';
 import { IncomingMessageWithUser } from './types';
-import { isAuth } from './middleware/auth';
 
 const app = express();
 const httpServer = createServer(app);
@@ -24,7 +22,6 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 app.use('/auth', authRoutes);
-app.use('/conversations', isAuth, conversationsRoute);
 
 // Socket.io middleware setup
 io.engine.use(onlyForHandshake(sessionMiddleware as Middleware));
@@ -42,9 +39,17 @@ io.engine.use(
   )
 );
 
+const onlineUsers: Map<string, string> = new Map();
+
 io.on('connection', (socket) => {
   console.log('a user connected');
   const userId = (socket.request as IncomingMessageWithUser).user?.id;
+
+  if (userId) {
+    onlineUsers.set(userId, socket.id);
+
+    socket.emit('user-online', userId);
+  }
 });
 
 httpServer.listen(8080);
