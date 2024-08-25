@@ -9,6 +9,11 @@ import authRoutes from './routes/authRoutes';
 import { sessionMiddleware } from './middleware/authmiddleware';
 import { wrap } from './utils/wrap';
 import { Middleware, SocketWithUser } from './types';
+import {
+  createConversation,
+  getConversation,
+} from './services/conversationService';
+import { getMessages } from './services/messageService';
 
 const app = express();
 const httpServer = createServer(app);
@@ -41,7 +46,7 @@ io.use((socket: Socket, next: (err?: any) => void) => {
   }
 });
 
-const onlineUsers: Map<string, string> = new Map();
+const onlineUsers: Map<string, Socket> = new Map();
 
 io.on('connection', (socket: SocketWithUser) => {
   console.log('a user connected');
@@ -49,9 +54,33 @@ io.on('connection', (socket: SocketWithUser) => {
   console.log('userId', userId);
 
   if (userId) {
-    onlineUsers.set(userId, socket.id);
-
+    onlineUsers.set(userId, socket);
     socket.emit('user-online', userId);
+
+    socket.on('open-conversation', async (receiverId: string) => {
+      try {
+        const existingConversation = await getConversation(userId, receiverId);
+
+        let conversationId;
+
+        if (existingConversation) {
+          conversationId = existingConversation.conversationId;
+        } else {
+          const newConversation = await createConversation(userId, receiverId);
+          conversationId = newConversation.conversationId;
+        }
+
+        socket.join(conversationId);
+        onlineUsers.get(receiverId)?.join(conversationId);
+
+        const messages = await getMessages(conversationId);
+        socket.emit('messages', messages);
+      } catch (error) {
+        console.error(error);
+      }
+    });
+
+    socket.on('send-message', (message: string, conversationId: string) => {});
   }
 });
 
