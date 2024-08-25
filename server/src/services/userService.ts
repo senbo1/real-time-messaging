@@ -1,5 +1,5 @@
 import { userConversationsTable, usersTable } from '../drizzle/schema';
-import { and, eq, ne } from 'drizzle-orm';
+import { and, eq, ne, like } from 'drizzle-orm';
 import { db } from '../drizzle/db';
 
 export const getContacts = async (userID: string) => {
@@ -25,4 +25,14 @@ export const getContacts = async (userID: string) => {
     .where(eq(userConversationsTable.userId, userID));
 
   return recipients;
+};
+
+export const searchUsers = async (email: string, userId: string) => {
+  const users = await db
+    .select()
+    .from(usersTable)
+    .where(and(like(usersTable.email, `%${email}%`), ne(usersTable.id, userId)))
+    .limit(3);
+
+  return users || null;
 };

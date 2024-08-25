@@ -13,7 +13,8 @@ import {
   createConversation,
   getConversation,
 } from './services/conversationService';
-import { getMessages } from './services/messageService';
+import { getMessages, createMessage } from './services/messageService';
+import { searchUsers } from './services/userService';
 
 const app = express();
 const httpServer = createServer(app);
@@ -80,7 +81,29 @@ io.on('connection', (socket: SocketWithUser) => {
       }
     });
 
-    socket.on('send-message', (message: string, conversationId: string) => {});
+    socket.on(
+      'send-message',
+      async (conversationId: string, message: string) => {
+        try {
+          await createMessage({
+            conversationId,
+            senderId: userId,
+            content: message,
+          });
+
+          socket.to(conversationId).emit('message-received', message);
+        } catch (error) {
+          console.error(error);
+          socket.emit('error', error);
+        }
+      }
+    );
+
+    socket.on('search-users', async (email: string) => {
+      const users = await searchUsers(email, userId);
+      console.log('users', users);
+      socket.emit('search-result', users);
+    });
   }
 });
 

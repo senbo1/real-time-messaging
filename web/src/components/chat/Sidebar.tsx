@@ -2,6 +2,10 @@ import { Search } from 'lucide-react';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useEffect, useState } from 'react';
+import { User } from '@/lib/types';
+import { useSocket } from '@/hooks/useSocket';
+import { debounce } from '@/lib/debounce';
 
 const filters = [
   {
@@ -27,15 +31,81 @@ const filters = [
 ];
 
 const Sidebar = () => {
+  const [search, setSearch] = useState('');
+  const [users, setUsers] = useState<User[] | null>(null);
+  const [loading, setLoading] = useState(false);
+  const socket = useSocket();
+
+  const debouncedSearch = debounce((query: string) => {
+    if (!socket) return;
+    socket.emit('search-users', query);
+  }, 300);
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const query = e.target.value;
+    if (query.length === 0) {
+      setUsers(null);
+      setSearch('');
+      setLoading(false);
+      return;
+    }
+    setSearch(query);
+    debouncedSearch(query);
+    setLoading(true);
+  };
+
+  useEffect(() => {
+    if (!socket) return;
+    socket.on('search-result', (results: User[]) => {
+      setUsers(results);
+      setLoading(false);
+    });
+
+    return () => {
+      socket.off('search-result');
+    };
+  }, [socket]);
+
   return (
     <section className="w-1/3 border-r flex flex-col">
-      <div className="p-4 flex items-center relative border-b">
-        <Search className="absolute left-8" />
-        <Input
-          type="search"
-          placeholder="Search"
-          className="w-full p-5 py-6 pl-12 border-zinc-300 border-solid border-2 text-lg placeholder:font-medium"
-        />
+      <div className="p-4 flex flex-col justify-center relative border-b">
+        <div className="flex items-center">
+          <Search className="absolute left-8" />
+          <Input
+            type="search"
+            placeholder="Search by email"
+            className="w-full p-5 py-6 pl-12 border-zinc-300 border-solid border-2 text-lg placeholder:font-medium rounded-b-none"
+            value={search}
+            onChange={handleSearchChange}
+          />
+        </div>
+        {search && (
+          <div className="border-2 rounded-b-md">
+            {loading ? (
+              <div className="text-muted-foreground p-3">Loading...</div>
+            ) : users && users.length > 0 ? (
+              users.map((user) => (
+                <div
+                  key={user.id}
+                  className="flex items-center p-3 hover:bg-zinc-100 cursor-pointer"
+                >
+                  <Avatar className="mr-3">
+                    <AvatarImage src={user.profilePicture} alt={user.name} />
+                    <AvatarFallback>{user.name[0]}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <div className="font-medium">{user.name}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {user.email}
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-muted-foreground p-3">No users found</div>
+            )}
+          </div>
+        )}
       </div>
       <div className="lg:flex gap-3 p-2 ml-2 border-b py-4 hidden">
         {filters.map((filter) => (

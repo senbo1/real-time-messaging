@@ -33,7 +33,7 @@ export const getMessages = async (conversationID: string) => {
   return messages;
 };
 
-export const addMessageToDB = async (message: {
+export const createMessage = async (message: {
   conversationId: string;
   senderId: string;
   content: string;
