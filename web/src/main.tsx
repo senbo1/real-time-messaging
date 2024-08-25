@@ -4,7 +4,6 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import './index.css';
 import ChatPage from './pages/ChatPage';
 import SignIn from './pages/SignIn';
-// import { UserProvider } from './components/context/UserContext';
 
 const router = createBrowserRouter([
   {

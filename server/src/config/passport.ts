@@ -22,13 +22,13 @@ passport.use(
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     },
     async (accessToken, refreshToken, profile, done) => {
-      const user = await db
+      const [user] = await db
         .select({ id: usersTable.id })
         .from(usersTable)
         .where(eq(usersTable.googleId, profile.id));
 
-      if (user.length === 0) {
-        const newUser = await db
+      if (!user) {
+        const [newUser] = await db
           .insert(usersTable)
           .values({
             googleId: profile.id,
@@ -40,9 +40,9 @@ passport.use(
             id: usersTable.id,
           });
 
-        done(null, newUser[0]);
+        done(null, newUser);
       } else {
-        done(null, user[0]);
+        done(null, user);
       }
     }
   )
@@ -53,6 +53,9 @@ passport.serializeUser((user, done) => {
 });
 
 passport.deserializeUser(async (id: string, done) => {
-  const user = await db.select().from(usersTable).where(eq(usersTable.id, id));
-  done(null, user[0]);
+  const [user] = await db
+    .select()
+    .from(usersTable)
+    .where(eq(usersTable.id, id));
+  done(null, user);
 });

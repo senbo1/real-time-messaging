@@ -8,15 +8,15 @@ interface UserContextType {
   error: Error | null;
 }
 
+interface UserProviderProps {
+  children: ReactNode;
+}
+
 export const UserContext = createContext<UserContextType>({
   user: null,
   loading: true,
   error: null,
 });
-
-interface UserProviderProps {
-  children: ReactNode;
-}
 
 export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);

@@ -1,4 +1,4 @@
-const ChatContainer = () => {
+const ConversationContainer = () => {
   return (
     <div className="flex-1 p-4 overflow-y-auto">
       <div className="mb-4">
@@ -39,4 +39,4 @@ const ChatContainer = () => {
   );
 };
 
-export default ChatContainer;
+export default ConversationContainer;

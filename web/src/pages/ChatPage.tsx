@@ -1,15 +1,26 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import axios from 'axios';
-import { UserProvider } from '@/components/context/UserContext';
-import { useUser } from '@/hooks/useUser';
-import ChatContainer from '@/components/chat/ChatContainer';
+import ConversationContainer from '@/components/chat/ConversationContainer';
 import ChatHeader from '@/components/chat/ChatHeader';
 import ChatInput from '@/components/chat/ChatInput';
 import Sidebar from '@/components/chat/Sidebar';
 import { Button } from '@/components/ui/button';
+import { UserProvider } from '@/components/context/UserContext';
+import { useUser } from '@/hooks/useUser';
+import { SocketProvider } from '@/components/context/SocketContext';
+import { useSocket } from '@/hooks/useSocket';
 
 const ChatPageContent: React.FC = () => {
   const { loading, error } = useUser();
+  const socket = useSocket();
+
+  useEffect(() => {
+    if (socket) {
+      socket.on('connect', () => {
+        console.log('connected');
+      });
+    }
+  }, [socket]);
 
   if (loading) {
     return <div>Loading...</div>;
@@ -37,7 +48,7 @@ const ChatPageContent: React.FC = () => {
         <Sidebar />
         <section className="flex-1 flex flex-col">
           <ChatHeader />
-          <ChatContainer />
+          <ConversationContainer />
           <ChatInput />
         </section>
       </main>
@@ -48,7 +59,9 @@ const ChatPageContent: React.FC = () => {
 function ChatPage() {
   return (
     <UserProvider>
-      <ChatPageContent />
+      <SocketProvider>
+        <ChatPageContent />
+      </SocketProvider>
     </UserProvider>
   );
 }
