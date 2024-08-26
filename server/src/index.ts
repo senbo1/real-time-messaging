@@ -61,7 +61,6 @@ io.on('connection', (socket: SocketWithUser) => {
     socket.on('join-conversation', async (receiverId: string) => {
       try {
         const existingConversation = await getConversation(userId, receiverId);
-        console.log('existingConversation', existingConversation);
         let conversationId;
 
         if (existingConversation) {

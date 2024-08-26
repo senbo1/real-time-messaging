@@ -5,7 +5,11 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useEffect, useState } from 'react';
 import { User } from '@/lib/types';
 import { useSocket } from '@/hooks/useSocket';
-import { debounce } from '@/lib/debounce';
+import { useDebounce } from '@/hooks/useDebounce';
+
+type SidebarProps = {
+  onUserSelect: (user: User) => void;
+};
 
 const filters = [
   {
@@ -30,41 +34,45 @@ const filters = [
   },
 ];
 
-const Sidebar = () => {
+const Sidebar: React.FC<SidebarProps> = ({ onUserSelect }) => {
   const [search, setSearch] = useState('');
   const [users, setUsers] = useState<User[] | null>(null);
   const [loading, setLoading] = useState(false);
+  const debouncedSearch = useDebounce(search, 300);
   const socket = useSocket();
-
-  const debouncedSearch = debounce((query: string) => {
-    if (!socket) return;
-    socket.emit('search-users', query);
-  }, 300);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value;
-    if (query.length === 0) {
-      setUsers(null);
-      setSearch('');
-      setLoading(false);
-      return;
-    }
     setSearch(query);
-    debouncedSearch(query);
-    setLoading(true);
   };
 
   useEffect(() => {
     if (!socket) return;
-    socket.on('search-result', (results: User[]) => {
+
+    if (debouncedSearch.length === 0) {
+      setUsers(null);
+      setLoading(false);
+    } else if (socket) {
+      setLoading(true);
+      socket.emit('search-users', debouncedSearch);
+    }
+
+    const handleSearchResult = (results: User[]) => {
       setUsers(results);
       setLoading(false);
-    });
+    };
+
+    socket.on('search-result', handleSearchResult);
 
     return () => {
       socket.off('search-result');
     };
-  }, [socket]);
+  }, [debouncedSearch, socket]);
+
+  const handleUserSelect = (user: User) => {
+    onUserSelect(user);
+    console.log('user', user.id);
+  };
 
   return (
     <section className="w-1/3 border-r flex flex-col">
@@ -81,13 +89,14 @@ const Sidebar = () => {
         </div>
         {search && (
           <div className="border-2 rounded-b-md">
-            {loading ? (
+            {loading && !users ? (
               <div className="text-muted-foreground p-3">Loading...</div>
             ) : users && users.length > 0 ? (
               users.map((user) => (
                 <div
                   key={user.id}
                   className="flex items-center p-3 hover:bg-zinc-100 cursor-pointer"
+                  onClick={() => handleUserSelect(user)}
                 >
                   <Avatar className="mr-3">
                     <AvatarImage src={user.profilePicture} alt={user.name} />

@@ -1,17 +1,18 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import ConversationContainer from '@/components/chat/ConversationContainer';
 import ChatHeader from '@/components/chat/ChatHeader';
-import ChatInput from '@/components/chat/ChatInput';
 import Sidebar from '@/components/chat/Sidebar';
 import { Button } from '@/components/ui/button';
 import { UserProvider } from '@/components/context/UserContext';
 import { useUser } from '@/hooks/useUser';
 import { SocketProvider } from '@/components/context/SocketContext';
 import { useSocket } from '@/hooks/useSocket';
+import { User } from '@/lib/types';
 
 const ChatPageContent: React.FC = () => {
   const { loading, error } = useUser();
+  const [recipient, setRecipient] = useState<User | null>(null);
   const socket = useSocket();
 
   useEffect(() => {
@@ -21,6 +22,10 @@ const ChatPageContent: React.FC = () => {
       });
     }
   }, [socket]);
+
+  const handleUserSelect = (user: User) => {
+    setRecipient(user);
+  };
 
   if (loading) {
     return <div>Loading...</div>;
@@ -45,11 +50,10 @@ const ChatPageContent: React.FC = () => {
         Log Out
       </Button>
       <main className="flex h-[96%]">
-        <Sidebar />
+        <Sidebar onUserSelect={handleUserSelect} />
         <section className="flex-1 flex flex-col">
-          <ChatHeader />
-          <ConversationContainer />
-          <ChatInput />
+          <ChatHeader recipient={recipient} />
+          <ConversationContainer recipient={recipient} />
         </section>
       </main>
     </main>

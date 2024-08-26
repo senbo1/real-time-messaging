@@ -6,3 +6,11 @@ export type User = {
   profilePicture?: string;
   createdAt: string;
 };
+
+export type Message = {
+  conversationId: string;
+  senderId: string;
+  messageId: string;
+  content: string;
+  time: Date;
+};

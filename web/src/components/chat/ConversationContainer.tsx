@@ -1,41 +1,87 @@
-const ConversationContainer = () => {
+import { useSocket } from '@/hooks/useSocket';
+import { useUser } from '@/hooks/useUser';
+import { Message, User } from '@/lib/types';
+import { useEffect, useState } from 'react';
+import ChatInput from './ChatInput';
+import { cn } from '@/lib/utils';
+
+type ConversationContainerProps = {
+  recipient: User | null;
+};
+
+const ConversationContainer: React.FC<ConversationContainerProps> = ({
+  recipient,
+}) => {
+  const [messages, setMessages] = useState<Message[] | null>(null);
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const socket = useSocket();
+  const { user } = useUser();
+
+  useEffect(() => {
+    if (!socket || !recipient) return;
+    socket.emit('join-conversation', recipient.id);
+
+    socket.on('conversation-joined', (conversationId: string) => {
+      setConversationId(conversationId);
+    });
+
+    socket.on('loading-messages', (messages: Message[]) => {
+      setMessages(messages);
+    });
+
+    socket.on('message-received', (message: Message) => {
+      console.log('message-received', message);
+      setMessages((prevMessages) => [...(prevMessages || []), message]);
+      console.log('messages', messages);
+    });
+
+    return () => {
+      socket.off('loading-messages');
+      socket.off('conversation-joined');
+      socket.off('message-received');
+    };
+  }, [socket, recipient, messages]);
+
+  if (!recipient) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-semibold mb-2">No chat selected</h2>
+          <p className="text-gray-600">
+            Select a chat or start a new conversation
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex-1 p-4 overflow-y-auto">
-      <div className="mb-4">
-        <div className="bg-gray-100 p-4 rounded-lg">
-          Hello, i wanted to know more about the product design position opened
-          at Atlassian
-        </div>
+    <>
+      <div className="flex-1 flex flex-col justify-between p-4 overflow-y-auto">
+        {user &&
+          messages &&
+          messages.length > 0 &&
+          messages.map(({ senderId, content }, index: number) => (
+            <div
+              key={index}
+              className={cn('mb-4', senderId === user.id ? 'text-right' : '')}
+            >
+              <div
+                className={cn(
+                  'p-4 rounded-lg inline-block',
+                  senderId === user.id ? 'bg-primary text-white' : 'bg-gray-100'
+                )}
+              >
+                {content}
+              </div>
+              {/* <div className="text-sm text-muted-foreground mt-1">
+                {new Date(time).toLocaleString()}
+              </div> */}
+            </div>
+          ))}
       </div>
-      <div className="mb-4 text-right">
-        <div className="bg-red-500 text-white p-4 rounded-lg inline-block">
-          Sure, tell us. what do you wanna know?
-        </div>
-      </div>
-      <div className="mb-4">
-        <div className="bg-gray-100 p-4 rounded-lg">
-          Take this part of your letter seriously because it's likely one of
-          your first genuine opportunities to make a personal, positive
-          impression on a prospective employer. You want your words to invite
-          them to keep reading and to convey exactly why you're the best choice
-          for their open position. Review your language to ensure it's concise
-          and informative. If you're applying to multiple positions, take great
-          care to edit your letter so that the first paragraph is personal and
-          relevant to the exact position you want.
-        </div>
-      </div>
-      <div className="mb-4 text-right">
-        <div className="bg-red-500 text-white p-4 rounded-lg inline-block">
-          You've a good folio
-        </div>
-      </div>
-      <div className="mb-4 text-right">
-        <div className="bg-red-500 text-white p-4 rounded-lg inline-block">
-          However we're looking for someone with a little more experience!
-        </div>
-        <div className="text-sm text-muted-foreground mt-1">3 days</div>
-      </div>
-    </div>
+      <ChatInput conversationId={conversationId} />
+    </>
   );
 };
 
