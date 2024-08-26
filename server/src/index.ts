@@ -58,10 +58,10 @@ io.on('connection', (socket: SocketWithUser) => {
     onlineUsers.set(userId, socket);
     socket.emit('user-online', userId);
 
-    socket.on('open-conversation', async (receiverId: string) => {
+    socket.on('join-conversation', async (receiverId: string) => {
       try {
         const existingConversation = await getConversation(userId, receiverId);
-
+        console.log('existingConversation', existingConversation);
         let conversationId;
 
         if (existingConversation) {
@@ -74,8 +74,10 @@ io.on('connection', (socket: SocketWithUser) => {
         socket.join(conversationId);
         onlineUsers.get(receiverId)?.join(conversationId);
 
+        socket.emit('conversation-joined', conversationId);
+
         const messages = await getMessages(conversationId);
-        socket.emit('messages', messages);
+        socket.emit('loading-messages', messages);
       } catch (error) {
         console.error(error);
       }
@@ -101,7 +103,6 @@ io.on('connection', (socket: SocketWithUser) => {
 
     socket.on('search-users', async (email: string) => {
       const users = await searchUsers(email, userId);
-      console.log('users', users);
       socket.emit('search-result', users);
     });
   }

@@ -6,6 +6,7 @@ export const getLastMessage = async (conversationID: string) => {
   const [lastMessage] = await db
     .select({
       conversationId: messagesTable.conversationId,
+      senderId: messagesTable.senderId,
       content: messagesTable.content,
       time: messagesTable.createdAt,
     })
