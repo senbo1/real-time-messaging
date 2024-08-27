@@ -2,7 +2,8 @@ import { Paperclip, SendHorizonal } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { useSocket } from '@/hooks/useSocket';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { useUser } from '@/hooks/useUser';
 
 type ChatInputProps = {
   conversationId: string | null;
@@ -11,16 +12,34 @@ type ChatInputProps = {
 const ChatInput = ({ conversationId }: ChatInputProps) => {
   const socket = useSocket();
   const [message, setMessage] = useState('');
+  const { user } = useUser();
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleSendMessage = () => {
     if (!socket || !conversationId) return;
-    console.log('send-message', conversationId, message);
     socket.emit('send-message', conversationId, message);
     setMessage('');
   };
 
   const handleMessageInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     setMessage(e.target.value);
+    if (socket && conversationId) {
+      socket.emit('typing', {
+        conversationId,
+        isTyping: true,
+        userId: user?.id,
+      });
+
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+
+      timeoutRef.current = setTimeout(() => {
+        socket.emit('typing', {
+          conversationId,
+          isTyping: false,
+          userId: user?.id,
+        });
+      }, 1000);
+    }
   };
 
   return (

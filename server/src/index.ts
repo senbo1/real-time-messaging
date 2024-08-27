@@ -104,6 +104,22 @@ io.on('connection', (socket: SocketWithUser) => {
       const users = await searchUsers(email, userId);
       socket.emit('search-result', users);
     });
+
+    socket.on(
+      'typing',
+      ({
+        conversationId,
+        isTyping,
+        userId,
+      }: {
+        conversationId: string;
+        isTyping: boolean;
+        userId: string;
+      }) => {
+        console.log('typing', { conversationId, isTyping, userId });
+        socket.to(conversationId).emit('typing', { isTyping, userId });
+      }
+    );
   }
 });
 
