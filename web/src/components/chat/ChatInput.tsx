@@ -42,6 +42,12 @@ const ChatInput = ({ conversationId }: ChatInputProps) => {
     }
   };
 
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      handleSendMessage();
+    }
+  };
+
   return (
     <div className="p-4 border-t">
       <div className="flex items-center relative">
@@ -51,6 +57,7 @@ const ChatInput = ({ conversationId }: ChatInputProps) => {
           className="flex-1 bg-gray-100 p-6 py-7 pr-28 border-0 text-xl placeholder:text-gray-400"
           value={message}
           onChange={handleMessageInput}
+          onKeyDown={handleKeyPress}
         />
         <div className="flex gap-2 absolute right-2">
           <Button variant="ghost" size="icon" className=" hover:bg-primary/10">
@@ -61,7 +68,6 @@ const ChatInput = ({ conversationId }: ChatInputProps) => {
             size="icon"
             className=" hover:bg-primary/10"
             onClick={handleSendMessage}
-            type="submit"
           >
             <SendHorizonal className="w-6 h-6 text-primary" />
           </Button>

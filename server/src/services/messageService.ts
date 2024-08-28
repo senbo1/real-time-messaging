@@ -39,5 +39,15 @@ export const createMessage = async (message: {
   senderId: string;
   content: string;
 }) => {
-  await db.insert(messagesTable).values(message);
+  const [newMessage] = await db
+    .insert(messagesTable)
+    .values(message)
+    .returning({
+      conversationId: messagesTable.conversationId,
+      senderId: messagesTable.senderId,
+      messageId: messagesTable.id,
+      content: messagesTable.content,
+      time: messagesTable.createdAt,
+    });
+  return newMessage;
 };

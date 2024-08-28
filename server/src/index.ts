@@ -77,7 +77,6 @@ io.on('connection', (socket: SocketWithUser) => {
         }
 
         socket.join(conversationId);
-        onlineUsers.get(receiverId)?.join(conversationId);
 
         socket.emit('conversation-joined', conversationId);
 
@@ -92,13 +91,13 @@ io.on('connection', (socket: SocketWithUser) => {
       'send-message',
       async (conversationId: string, message: string) => {
         try {
-          await createMessage({
+          const newMessage = await createMessage({
             conversationId,
             senderId: userId,
             content: message,
           });
 
-          socket.to(conversationId).emit('message-received', message);
+          io.to(conversationId).emit('message-received', newMessage);
         } catch (error) {
           console.error(error);
           socket.emit('error', error);
@@ -122,7 +121,6 @@ io.on('connection', (socket: SocketWithUser) => {
         isTyping: boolean;
         userId: string;
       }) => {
-        console.log('typing', { conversationId, isTyping, userId });
         socket.to(conversationId).emit('typing', { isTyping, userId });
       }
     );

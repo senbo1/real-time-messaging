@@ -1,7 +1,7 @@
 import { useSocket } from '@/hooks/useSocket';
 import { useUser } from '@/hooks/useUser';
 import { Message, User } from '@/lib/types';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import ChatInput from './ChatInput';
 import { cn } from '@/lib/utils';
 
@@ -14,11 +14,13 @@ const ConversationContainer: React.FC<ConversationContainerProps> = ({
 }) => {
   const [messages, setMessages] = useState<Message[] | null>(null);
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const socket = useSocket();
   const { user } = useUser();
 
   useEffect(() => {
     if (!socket || !recipient) return;
+
     socket.emit('join-conversation', recipient.id);
 
     socket.on('conversation-joined', (conversationId: string) => {
@@ -30,17 +32,21 @@ const ConversationContainer: React.FC<ConversationContainerProps> = ({
     });
 
     socket.on('message-received', (message: Message) => {
-      console.log('message-received', message);
       setMessages((prevMessages) => [...(prevMessages || []), message]);
-      console.log('messages', messages);
     });
 
     return () => {
-      socket.off('loading-messages');
       socket.off('conversation-joined');
+      socket.off('loading-messages');
       socket.off('message-received');
     };
-  }, [socket, recipient, messages]);
+  }, [socket, recipient]);
+
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
 
   if (!recipient) {
     return (
@@ -79,6 +85,7 @@ const ConversationContainer: React.FC<ConversationContainerProps> = ({
               </div> */}
             </div>
           ))}
+        <div ref={messagesEndRef} />
       </div>
       <ChatInput conversationId={conversationId} />
     </>
