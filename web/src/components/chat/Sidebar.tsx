@@ -71,7 +71,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onUserSelect }) => {
 
   const handleUserSelect = (user: User) => {
     onUserSelect(user);
-    console.log('user', user.id);
+    setSearch('');
   };
 
   return (

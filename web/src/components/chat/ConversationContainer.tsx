@@ -57,7 +57,7 @@ const ConversationContainer: React.FC<ConversationContainerProps> = ({
 
   return (
     <>
-      <div className="flex-1 flex flex-col justify-between p-4 overflow-y-auto">
+      <div className="flex-1 flex flex-col p-4 overflow-y-auto">
         {user &&
           messages &&
           messages.length > 0 &&

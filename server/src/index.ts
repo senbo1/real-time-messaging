@@ -56,7 +56,13 @@ io.on('connection', (socket: SocketWithUser) => {
 
   if (userId) {
     onlineUsers.set(userId, socket);
-    socket.emit('user-online', userId);
+
+    io.emit('user-online-status', userId, true);
+
+    socket.on('req-user-online-status', (userId: string) => {
+      const isOnline = onlineUsers.has(userId);
+      socket.emit('user-online-status', userId, isOnline);
+    });
 
     socket.on('join-conversation', async (receiverId: string) => {
       try {
@@ -120,6 +126,11 @@ io.on('connection', (socket: SocketWithUser) => {
         socket.to(conversationId).emit('typing', { isTyping, userId });
       }
     );
+
+    socket.on('disconnect', () => {
+      onlineUsers.delete(userId);
+      io.emit('user-online-status', userId, false);
+    });
   }
 });
 
