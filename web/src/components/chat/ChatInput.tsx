@@ -16,7 +16,7 @@ const ChatInput = ({ conversationId }: ChatInputProps) => {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleSendMessage = () => {
-    if (!socket || !conversationId) return;
+    if (!socket || !conversationId || !message) return;
     socket.emit('send-message', conversationId, message);
     setMessage('');
   };
@@ -38,7 +38,7 @@ const ChatInput = ({ conversationId }: ChatInputProps) => {
           isTyping: false,
           userId: user?.id,
         });
-      }, 1000);
+      }, 500);
     }
   };
 

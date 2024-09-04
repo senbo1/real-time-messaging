@@ -1,21 +1,22 @@
 import { db } from '../drizzle/db';
-import { desc, asc, eq } from 'drizzle-orm';
+import { asc, eq, desc } from 'drizzle-orm';
 import { messagesTable } from '../drizzle/schema';
 
-export const getLastMessage = async (conversationID: string) => {
+export const getLastMessage = async (conversationId: string) => {
   const [lastMessage] = await db
     .select({
       conversationId: messagesTable.conversationId,
       senderId: messagesTable.senderId,
+      messageId: messagesTable.id,
       content: messagesTable.content,
       time: messagesTable.createdAt,
     })
     .from(messagesTable)
-    .where(eq(messagesTable.conversationId, conversationID))
+    .where(eq(messagesTable.conversationId, conversationId))
     .orderBy(desc(messagesTable.createdAt))
     .limit(1);
 
-  return lastMessage;
+  return lastMessage || null;
 };
 
 export const getMessages = async (conversationID: string) => {

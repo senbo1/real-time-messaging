@@ -1,12 +1,12 @@
 import { useSocket } from '@/hooks/useSocket';
 import { useUser } from '@/hooks/useUser';
-import { Message, User } from '@/lib/types';
+import { Message, Recipient } from '@/lib/types';
 import { useEffect, useRef, useState } from 'react';
 import ChatInput from './ChatInput';
 import { cn } from '@/lib/utils';
 
 type ConversationContainerProps = {
-  recipient: User | null;
+  recipient: Recipient | null;
 };
 
 const ConversationContainer: React.FC<ConversationContainerProps> = ({
@@ -67,9 +67,9 @@ const ConversationContainer: React.FC<ConversationContainerProps> = ({
         {user &&
           messages &&
           messages.length > 0 &&
-          messages.map(({ senderId, content }, index: number) => (
+          messages.map(({ senderId, content, messageId }) => (
             <div
-              key={index}
+              key={messageId}
               className={cn('mb-4', senderId === user.id ? 'text-right' : '')}
             >
               <div

@@ -1,14 +1,13 @@
-import { Search } from 'lucide-react';
-import { Input } from '../ui/input';
 import { Button } from '../ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Contact, Recipient } from '@/lib/types';
+import SearchBox from './Search';
 import { useEffect, useState } from 'react';
-import { User } from '@/lib/types';
 import { useSocket } from '@/hooks/useSocket';
-import { useDebounce } from '@/hooks/useDebounce';
+import { useUser } from '@/hooks/useUser';
+import ContactItem from './ContactItem';
 
 type SidebarProps = {
-  onUserSelect: (user: User) => void;
+  onUserSelect: (user: Recipient) => void;
 };
 
 const filters = [
@@ -35,87 +34,31 @@ const filters = [
 ];
 
 const Sidebar: React.FC<SidebarProps> = ({ onUserSelect }) => {
-  const [search, setSearch] = useState('');
-  const [users, setUsers] = useState<User[] | null>(null);
-  const [loading, setLoading] = useState(false);
-  const debouncedSearch = useDebounce(search, 300);
   const socket = useSocket();
-
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const query = e.target.value;
-    setSearch(query);
-  };
+  const { user } = useUser();
+  const [contacts, setContacts] = useState<Contact[] | null>(null);
 
   useEffect(() => {
-    if (!socket) return;
+    console.log('contacts', contacts);
+  }, [contacts]);
 
-    if (debouncedSearch.length === 0) {
-      setUsers(null);
-      setLoading(false);
-    } else if (socket) {
-      setLoading(true);
-      socket.emit('search-users', debouncedSearch);
-    }
+  useEffect(() => {
+    if (!socket || !user) return;
 
-    const handleSearchResult = (results: User[]) => {
-      setUsers(results);
-      setLoading(false);
-    };
+    socket.emit('req-contacts', user.id);
 
-    socket.on('search-result', handleSearchResult);
+    socket.on('contacts', (contacts: Contact[]) => {
+      setContacts(contacts);
+    });
 
     return () => {
-      socket.off('search-result');
+      socket.off('contacts');
     };
-  }, [debouncedSearch, socket]);
-
-  const handleUserSelect = (user: User) => {
-    onUserSelect(user);
-    setSearch('');
-  };
+  }, [socket, user]);
 
   return (
     <section className="w-1/3 border-r flex flex-col">
-      <div className="p-4 flex flex-col justify-center relative border-b">
-        <div className="flex items-center">
-          <Search className="absolute left-8" />
-          <Input
-            type="search"
-            placeholder="Search by email"
-            className="w-full p-5 py-6 pl-12 border-zinc-300 border-solid border-2 text-lg placeholder:font-medium rounded-b-none"
-            value={search}
-            onChange={handleSearchChange}
-          />
-        </div>
-        {search && (
-          <div className="border-2 rounded-b-md">
-            {loading && !users ? (
-              <div className="text-muted-foreground p-3">Loading...</div>
-            ) : users && users.length > 0 ? (
-              users.map((user) => (
-                <div
-                  key={user.id}
-                  className="flex items-center p-3 hover:bg-zinc-100 cursor-pointer"
-                  onClick={() => handleUserSelect(user)}
-                >
-                  <Avatar className="mr-3">
-                    <AvatarImage src={user.profilePicture} alt={user.name} />
-                    <AvatarFallback>{user.name[0]}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <div className="font-medium">{user.name}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {user.email}
-                    </div>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="text-muted-foreground p-3">No users found</div>
-            )}
-          </div>
-        )}
-      </div>
+      <SearchBox onUserSelect={onUserSelect} />
       <div className="lg:flex gap-3 p-2 ml-2 border-b py-4 hidden">
         {filters.map((filter) => (
           <Button
@@ -128,22 +71,20 @@ const Sidebar: React.FC<SidebarProps> = ({ onUserSelect }) => {
         ))}
       </div>
       <div className="overflow-y-scroll flex-grow">
-        {Array.from({ length: 10 }).map((_, i) => (
-          <div key={i} className="flex items-start p-4 border-b">
-            <Avatar>
-              <AvatarImage src="/placeholder-user.jpg" alt="User" />
-              <AvatarFallback>U</AvatarFallback>
-            </Avatar>
-            <div className="ml-4">
-              <div className="font-bold">User {i + 1}</div>
-              <div className="text-sm text-muted-foreground">11 days</div>
-              <div className="mt-1">
-                User {i + 1}: Hello, I wanted to know more about the product
-                design position opened at Atlassian.
-              </div>
-            </div>
-          </div>
-        ))}
+        {contacts && contacts.length > 0 ? (
+          contacts.map(({ id, name, profilePicture, conversationId }) => (
+            <ContactItem
+              key={id}
+              id={id}
+              name={name}
+              profilePicture={profilePicture}
+              conversationId={conversationId}
+              onUserSelect={onUserSelect}
+            />
+          ))
+        ) : (
+          <div>No contacts</div>
+        )}
       </div>
     </section>
   );

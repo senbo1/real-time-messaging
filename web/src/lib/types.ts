@@ -7,6 +7,19 @@ export type User = {
   createdAt: string;
 };
 
+export type Recipient = {
+  id: string;
+  name: string;
+  profilePicture?: string;
+};
+
+export type Contact = {
+  conversationId: string;
+  id: string;
+  name: string;
+  profilePicture?: string;
+};
+
 export type Message = {
   conversationId: string;
   senderId: string;

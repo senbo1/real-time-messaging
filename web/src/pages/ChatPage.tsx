@@ -7,14 +7,14 @@ import { Button } from '@/components/ui/button';
 import { UserProvider } from '@/components/context/UserContext';
 import { useUser } from '@/hooks/useUser';
 import { SocketProvider } from '@/components/context/SocketContext';
-import { User } from '@/lib/types';
+import { Recipient } from '@/lib/types';
 
 const ChatPageContent: React.FC = () => {
   const { loading, error } = useUser();
-  const [recipient, setRecipient] = useState<User | null>(null);
+  const [recipient, setRecipient] = useState<Recipient | null>(null);
 
-  const handleUserSelect = (user: User) => {
-    setRecipient(user);
+  const handleUserSelect = (recipient: Recipient) => {
+    setRecipient(recipient);
   };
 
   if (loading) {

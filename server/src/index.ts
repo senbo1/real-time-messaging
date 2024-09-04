@@ -13,8 +13,12 @@ import {
   createConversation,
   getConversation,
 } from './services/conversationService';
-import { getMessages, createMessage } from './services/messageService';
-import { searchUsers } from './services/userService';
+import {
+  getMessages,
+  createMessage,
+  getLastMessage,
+} from './services/messageService';
+import { getContacts, searchUsers } from './services/userService';
 
 const app = express();
 const httpServer = createServer(app);
@@ -57,11 +61,29 @@ io.on('connection', (socket: SocketWithUser) => {
   if (userId) {
     onlineUsers.set(userId, socket);
 
-    io.emit('user-online-status', userId, true);
+    io.emit('online-status', userId, true);
 
-    socket.on('req-user-online-status', (userId: string) => {
+    socket.on('req-online-status', (userId: string) => {
       const isOnline = onlineUsers.has(userId);
-      socket.emit('user-online-status', userId, isOnline);
+      socket.emit('online-status', userId, isOnline);
+    });
+
+    socket.on('req-contacts', async () => {
+      try {
+        const contacts = await getContacts(userId);
+        socket.emit('contacts', contacts);
+      } catch (error) {
+        socket.emit('error', error);
+      }
+    });
+
+    socket.on('req-last-message', async (conversationId: string) => {
+      try {
+        const lastMessage = await getLastMessage(conversationId);
+        socket.emit('last-message', lastMessage);
+      } catch (error) {
+        socket.emit('error', error);
+      }
     });
 
     socket.on('join-conversation', async (receiverId: string) => {
@@ -127,7 +149,7 @@ io.on('connection', (socket: SocketWithUser) => {
 
     socket.on('disconnect', () => {
       onlineUsers.delete(userId);
-      io.emit('user-online-status', userId, false);
+      io.emit('online-status', userId, false);
     });
   }
 });

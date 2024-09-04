@@ -4,23 +4,29 @@ import { conversationsTable, userConversationsTable } from '../drizzle/schema';
 import { and, eq } from 'drizzle-orm';
 
 export const getConversation = async (userID: string, recipientID: string) => {
-  const user2 = alias(userConversationsTable, 'user2');
+  const userConversations2 = alias(
+    userConversationsTable,
+    'userConversations2'
+  );
 
   const [conversation] = await db
     .select({
       conversationId: userConversationsTable.conversationId,
       senderId: userConversationsTable.userId,
-      recipientId: user2.userId,
+      recipientId: userConversations2.userId,
     })
     .from(userConversationsTable)
     .innerJoin(
-      user2,
-      eq(userConversationsTable.conversationId, user2.conversationId)
+      userConversations2,
+      eq(
+        userConversationsTable.conversationId,
+        userConversations2.conversationId
+      )
     )
     .where(
       and(
         eq(userConversationsTable.userId, userID),
-        eq(user2.userId, recipientID)
+        eq(userConversations2.userId, recipientID)
       )
     );
 

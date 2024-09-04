@@ -1,11 +1,11 @@
 import { useSocket } from '@/hooks/useSocket';
 import { useEffect, useState } from 'react';
-import { User } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Dot } from 'lucide-react';
+import { Recipient } from '@/lib/types';
 
 type ChatHeaderProps = {
-  recipient: User | null;
+  recipient: Recipient | null;
 };
 
 const ChatHeader: React.FC<ChatHeaderProps> = ({ recipient }) => {
@@ -16,9 +16,9 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({ recipient }) => {
   useEffect(() => {
     if (!socket || !recipient) return;
 
-    socket.emit('req-user-online-status', recipient.id);
+    socket.emit('req-online-status', recipient.id);
 
-    socket.on('user-online-status', (userId: string, isOnline: boolean) => {
+    socket.on('online-status', (userId: string, isOnline: boolean) => {
       if (userId === recipient.id) {
         setIsOnline(isOnline);
       }
@@ -35,7 +35,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({ recipient }) => {
 
     return () => {
       socket.off('typing');
-      socket.off('user-online-status');
+      socket.off('online-status');
     };
   }, [socket, recipient]);
 
