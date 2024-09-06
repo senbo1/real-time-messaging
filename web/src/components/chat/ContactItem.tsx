@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useSocket } from '@/hooks/useSocket';
 import { Message, Recipient } from '@/lib/types';
 import { getRelativeTime } from '@/lib/time';
+import axios from 'axios';
 
 type ContactItemProps = {
   id: string;
@@ -31,10 +32,30 @@ const ContactItem: React.FC<ContactItemProps> = ({
   useEffect(() => {
     if (!socket) return;
 
-    socket.emit('req-last-message', conversationId);
-    socket.emit('req-online-status', id);
+    const fetchLastMessage = async () => {
+      try {
+        const response = await axios.get(
+          `${
+            import.meta.env.VITE_SERVER_URL
+          }/messages/${conversationId}/last-message`,
+          {
+            withCredentials: true,
+          }
+        );
+        console.log(response);
+        const message = response.data;
+        console.log(message);
+        if (message) {
+          setLastMessage({ ...message, time: new Date(message.time) });
+        }
+      } catch (error) {
+        console.error('Error fetching last message:', error);
+      }
+    };
 
-    console.log('conversationId', conversationId);
+    fetchLastMessage();
+
+    socket.emit('req-online-status', id);
 
     socket.on('online-status', (userId: string, isOnline: boolean) => {
       if (userId === id) {
@@ -55,8 +76,8 @@ const ContactItem: React.FC<ContactItemProps> = ({
   }, [socket, conversationId, id]);
 
   return (
-    <div
-      className="flex items-center p-4 border-b hover:bg-gray-100 cursor-pointer"
+    <button
+      className="flex items-center p-4 border-b hover:bg-gray-100 cursor-pointer w-full"
       onClick={handleUserSelect}
     >
       <Avatar>
@@ -84,7 +105,7 @@ const ContactItem: React.FC<ContactItemProps> = ({
           </div>
         )}
       </div>
-    </div>
+    </button>
   );
 };
 

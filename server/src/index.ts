@@ -6,7 +6,8 @@ import { Server, Socket } from 'socket.io';
 import cors from 'cors';
 import passport from 'passport';
 import authRoutes from './routes/authRoutes';
-import { sessionMiddleware } from './middleware/authmiddleware';
+import userRoutes from './routes/userRoutes';
+import { isAuth, sessionMiddleware } from './middleware/authmiddleware';
 import { wrap } from './utils/wrap';
 import { Middleware, SocketWithUser } from './types';
 import {
@@ -19,6 +20,7 @@ import {
   getLastMessage,
 } from './services/messageService';
 import { getContacts, searchUsers } from './services/userService';
+import messageRoutes from './routes/messageRoutes';
 
 const app = express();
 const httpServer = createServer(app);
@@ -35,6 +37,8 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 app.use('/auth', authRoutes);
+app.use('/users', isAuth, userRoutes);
+app.use('/messages', isAuth, messageRoutes);
 
 const io = new Server(httpServer, { cors: corsOptions });
 
@@ -68,37 +72,20 @@ io.on('connection', (socket: SocketWithUser) => {
       socket.emit('online-status', userId, isOnline);
     });
 
-    socket.on('req-contacts', async () => {
+    socket.on('join-conversation', async (recipientId: string) => {
       try {
-        const contacts = await getContacts(userId);
-        socket.emit('contacts', contacts);
-      } catch (error) {
-        socket.emit('error', error);
-      }
-    });
-
-    socket.on('req-last-message', async (conversationId: string) => {
-      try {
-        const lastMessage = await getLastMessage(conversationId);
-        socket.emit('last-message', lastMessage);
-      } catch (error) {
-        socket.emit('error', error);
-      }
-    });
-
-    socket.on('join-conversation', async (receiverId: string) => {
-      try {
-        const existingConversation = await getConversation(userId, receiverId);
+        const existingConversation = await getConversation(userId, recipientId);
         let conversationId;
 
         if (existingConversation) {
           conversationId = existingConversation.conversationId;
         } else {
-          const newConversation = await createConversation(userId, receiverId);
+          const newConversation = await createConversation(userId, recipientId);
           conversationId = newConversation.conversationId;
         }
 
         socket.join(conversationId);
+        onlineUsers.get(recipientId)?.join(conversationId);
 
         socket.emit('conversation-joined', conversationId);
 
@@ -126,11 +113,6 @@ io.on('connection', (socket: SocketWithUser) => {
         }
       }
     );
-
-    socket.on('search-users', async (email: string) => {
-      const users = await searchUsers(email, userId);
-      socket.emit('search-result', users);
-    });
 
     socket.on(
       'typing',

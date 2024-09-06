@@ -32,7 +32,9 @@ const ConversationContainer: React.FC<ConversationContainerProps> = ({
     });
 
     socket.on('message-received', (message: Message) => {
-      setMessages((prevMessages) => [...(prevMessages || []), message]);
+      if (message.conversationId === conversationId) {
+        setMessages((prevMessages) => [...(prevMessages || []), message]);
+      }
     });
 
     return () => {
@@ -40,7 +42,7 @@ const ConversationContainer: React.FC<ConversationContainerProps> = ({
       socket.off('loading-messages');
       socket.off('message-received');
     };
-  }, [socket, recipient]);
+  }, [socket, recipient, conversationId]);
 
   useEffect(() => {
     if (messagesEndRef.current) {

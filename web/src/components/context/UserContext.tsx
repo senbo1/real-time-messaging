@@ -1,4 +1,10 @@
-import React, { createContext, useState, useEffect, ReactNode } from 'react';
+import React, {
+  createContext,
+  useState,
+  useEffect,
+  ReactNode,
+  useMemo,
+} from 'react';
 import axios from 'axios';
 import { User } from '@/lib/types';
 
@@ -22,6 +28,11 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+
+  const contextValue = useMemo(
+    () => ({ user, loading, error }),
+    [user, loading, error]
+  );
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -52,8 +63,6 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   }, []);
 
   return (
-    <UserContext.Provider value={{ user, loading, error }}>
-      {children}
-    </UserContext.Provider>
+    <UserContext.Provider value={contextValue}>{children}</UserContext.Provider>
   );
 };

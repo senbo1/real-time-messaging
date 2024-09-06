@@ -41,12 +41,12 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({ recipient }) => {
 
   if (!recipient) return null;
   return (
-    <div className="flex items-center p-4 border-b bg-gray-100">
+    <div className="flex items-center p-4 border-b bg-gray-100 h-20">
       <Avatar>
         <AvatarImage src={recipient.profilePicture} alt={recipient.name} />
         <AvatarFallback>{recipient.name[0]}</AvatarFallback>
       </Avatar>
-      <div className="ml-4">
+      <div className="ml-4 flex flex-col justify-between">
         <div className="flex items-center">
           <div className="font-bold">{recipient.name}</div>
           {isOnline ? (
@@ -55,8 +55,9 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({ recipient }) => {
             <Dot className="text-gray-500 -ml-2" size={40} />
           )}
         </div>
+
         {isTyping && (
-          <div className="text-sm text-muted-foreground">Typing...</div>
+          <div className="text-sm text-muted-foreground -mt-2">Typing...</div>
         )}
       </div>
     </div>

@@ -3,19 +3,18 @@ import { Search } from 'lucide-react';
 import { Input } from '../ui/input';
 import { useEffect, useState } from 'react';
 import { useDebounce } from '@/hooks/useDebounce';
-import { useSocket } from '@/hooks/useSocket';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import axios from 'axios';
 
 type SearchProps = {
   onUserSelect: (user: User) => void;
 };
 
 const SearchBox: React.FC<SearchProps> = ({ onUserSelect }) => {
-  const socket = useSocket();
   const [search, setSearch] = useState('');
   const [users, setUsers] = useState<User[] | null>(null);
   const [loading, setLoading] = useState(false);
-  const debouncedSearch = useDebounce(search, 500);
+  const debouncedSearch = useDebounce(search);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value;
@@ -23,27 +22,34 @@ const SearchBox: React.FC<SearchProps> = ({ onUserSelect }) => {
   };
 
   useEffect(() => {
-    if (!socket) return;
-
-    if (debouncedSearch.length === 0) {
-      setUsers(null);
-      setLoading(false);
-    } else {
-      setLoading(true);
-      socket.emit('search-users', debouncedSearch);
-    }
-
-    const handleSearchResult = (results: User[]) => {
-      setUsers(results);
-      setLoading(false);
+    const searchUsers = async () => {
+      if (debouncedSearch.length === 0) {
+        setUsers(null);
+        setLoading(false);
+      } else {
+        setLoading(true);
+        try {
+          const response = await axios.get(
+            `${import.meta.env.VITE_SERVER_URL}/users/search`,
+            {
+              params: {
+                email: debouncedSearch,
+              },
+              withCredentials: true,
+            }
+          );
+          console.log(response.data);
+          setUsers(response.data);
+        } catch (error) {
+          console.error('Error searching users:', error);
+        } finally {
+          setLoading(false);
+        }
+      }
     };
 
-    socket.on('search-result', handleSearchResult);
-
-    return () => {
-      socket.off('search-result');
-    };
-  }, [debouncedSearch, socket]);
+    searchUsers();
+  }, [debouncedSearch]);
 
   const handleUserSelect = (user: User) => {
     onUserSelect(user);

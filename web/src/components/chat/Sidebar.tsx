@@ -2,9 +2,9 @@ import { Button } from '../ui/button';
 import { Contact, Recipient } from '@/lib/types';
 import SearchBox from './Search';
 import { useEffect, useState } from 'react';
-import { useSocket } from '@/hooks/useSocket';
 import { useUser } from '@/hooks/useUser';
 import ContactItem from './ContactItem';
+import axios from 'axios';
 
 type SidebarProps = {
   onUserSelect: (user: Recipient) => void;
@@ -34,7 +34,6 @@ const filters = [
 ];
 
 const Sidebar: React.FC<SidebarProps> = ({ onUserSelect }) => {
-  const socket = useSocket();
   const { user } = useUser();
   const [contacts, setContacts] = useState<Contact[] | null>(null);
 
@@ -43,18 +42,24 @@ const Sidebar: React.FC<SidebarProps> = ({ onUserSelect }) => {
   }, [contacts]);
 
   useEffect(() => {
-    if (!socket || !user) return;
+    if (!user) return;
 
-    socket.emit('req-contacts', user.id);
-
-    socket.on('contacts', (contacts: Contact[]) => {
-      setContacts(contacts);
-    });
-
-    return () => {
-      socket.off('contacts');
+    const fetchContacts = async () => {
+      try {
+        const response = await axios.get(
+          `${import.meta.env.VITE_SERVER_URL}/users/contacts`,
+          {
+            withCredentials: true,
+          }
+        );
+        setContacts(response.data);
+      } catch (error) {
+        console.error('Error fetching contacts:', error);
+      }
     };
-  }, [socket, user]);
+
+    fetchContacts();
+  }, [user]);
 
   return (
     <section className="w-1/3 border-r flex flex-col">
